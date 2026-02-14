@@ -12,6 +12,10 @@ const AUDIO_BASE =
 const CTA_REVEAL_SECONDS = 13 * 60;
 const SEEK_BUFFER = 0.75;
 
+// ✅ Popust/urgency podešavanja
+const DISCOUNT_PERCENT = 40;
+const DISCOUNT_DURATION_SECONDS = 10 * 60; // 10 minuta
+
 function normalizeKey(v: string) {
   return (v || "").toLowerCase().trim();
 }
@@ -38,6 +42,10 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
 
   const [showCTA, setShowCTA] = useState(false);
   const [ctaPulse, setCtaPulse] = useState(false);
+
+  // ✅ Popust timer state
+  const [offerSecondsLeft, setOfferSecondsLeft] = useState<number>(0);
+  const [offerActive, setOfferActive] = useState<boolean>(false);
 
   const fileKey = useMemo(() => {
     const map: Record<string, string> = {
@@ -165,6 +173,7 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
     };
   }, []);
 
+  // ✅ Prikaži CTA posle 13 min
   useEffect(() => {
     if (showCTA) return;
     if (currentTime >= CTA_REVEAL_SECONDS) {
@@ -173,6 +182,25 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
       setTimeout(() => setCtaPulse(false), 2200);
     }
   }, [currentTime, showCTA]);
+
+  // ✅ Startuj popust timer kad se CTA pojavi
+  useEffect(() => {
+    if (!showCTA) return;
+
+    setOfferActive(true);
+    setOfferSecondsLeft(DISCOUNT_DURATION_SECONDS);
+
+    const tick = () => {
+      setOfferSecondsLeft((prev) => {
+        const next = Math.max(0, prev - 1);
+        if (next === 0) setOfferActive(false);
+        return next;
+      });
+    };
+
+    const id = window.setInterval(tick, 1000);
+    return () => window.clearInterval(id);
+  }, [showCTA]);
 
   const progress = useMemo(() => {
     if (!duration || duration <= 0) return 0;
@@ -241,11 +269,23 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
                   {isPlaying ? (
                     <div className="flex gap-2">
                       <span className="block w-2 h-8 bg-white rounded-sm animate-pulse" />
-                      <span className="block w-2 h-8 bg-white rounded-sm animate-pulse" style={{ animationDelay: "0.2s" }} />
-                      <span className="block w-2 h-8 bg-white rounded-sm animate-pulse" style={{ animationDelay: "0.4s" }} />
+                      <span
+                        className="block w-2 h-8 bg-white rounded-sm animate-pulse"
+                        style={{ animationDelay: "0.2s" }}
+                      />
+                      <span
+                        className="block w-2 h-8 bg-white rounded-sm animate-pulse"
+                        style={{ animationDelay: "0.4s" }}
+                      />
                     </div>
                   ) : (
-                    <svg width="48" height="48" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
+                    <svg
+                      width="48"
+                      height="48"
+                      viewBox="0 0 24 24"
+                      fill="white"
+                      xmlns="http://www.w3.org/2000/svg"
+                    >
                       <path d="M8 5v14l11-7z" />
                     </svg>
                   )}
@@ -278,7 +318,9 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
                 </div>
               ) : (
                 <div className="text-center px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-400/20">
-                  <p className="text-emerald-300 text-xs font-semibold">Premium otključan ✓</p>
+                  <p className="text-emerald-300 text-xs font-semibold">
+                    Premium otključan ✓
+                  </p>
                 </div>
               )}
             </div>
@@ -293,7 +335,7 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
                 <h2 className="text-lg sm:text-xl font-bold text-white mb-3">
                   Ne ostavljaj ovo nedovršeno.
                 </h2>
-                <p className="text-white/80 text-sm mb-3">
+                <p className="text-white/80 text-sm mb-5">
                   Ovo je deo koji free čitanje ne otkriva: tvoje okidače, gde ti energija
                   curi i tačan sledeći korak u ovom ciklusu.
                 </p>
@@ -306,15 +348,21 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
                 <ul className="space-y-2 text-left mb-6 text-white/80 text-sm">
                   <li className="flex gap-2 items-start">
                     <span className="text-blue-400 flex-shrink-0">✓</span>
-                    <span><b>Ljubav:</b> ko ti "pali okidače" i zašto</span>
+                    <span>
+                      <b>Ljubav:</b> ko ti "pali okidače" i zašto
+                    </span>
                   </li>
                   <li className="flex gap-2 items-start">
                     <span className="text-blue-400 flex-shrink-0">✓</span>
-                    <span><b>Novac:</b> gde curi energija i kako da presečeš</span>
+                    <span>
+                      <b>Novac:</b> gde curi energija i kako da presečeš
+                    </span>
                   </li>
                   <li className="flex gap-2 items-start">
                     <span className="text-blue-400 flex-shrink-0">✓</span>
-                    <span><b>Sledeći koraci:</b> tačno šta da uradiš dalje</span>
+                    <span>
+                      <b>Sledeći koraci:</b> tačno šta da uradiš dalje
+                    </span>
                   </li>
                 </ul>
 
@@ -326,6 +374,18 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
                 >
                   🔓 OTKLJUČAJ PREMIUM SADA
                 </button>
+
+                {/* ✅ Popust + countdown ispod dugmeta (bez “samo danas”) */}
+                {offerActive ? (
+                  <div className="mt-3 text-emerald-300 text-xs font-semibold">
+                    🔥 {DISCOUNT_PERCENT}% popusta aktivno još{" "}
+                    {formatCountdown(offerSecondsLeft)} (u ovoj sesiji)
+                  </div>
+                ) : (
+                  <div className="mt-3 text-white/60 text-xs">
+                    Ponuda je istekla. Premium je i dalje dostupan po regularnoj ceni.
+                  </div>
+                )}
 
                 <div className="mt-3 text-white/60 text-xs">
                   Jednokratna kupovina • Pristup odmah • Digitalni sadržaj
