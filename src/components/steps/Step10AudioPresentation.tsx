@@ -13,7 +13,7 @@ const CTA_REVEAL_SECONDS = 13 * 60;
 const SEEK_BUFFER = 0.75;
 
 // ✅ Popust/urgency podešavanja
-const DISCOUNT_PERCENT = 40;
+const DISCOUNT_PERCENT = 75;
 const DISCOUNT_DURATION_SECONDS = 10 * 60; // 10 minuta
 
 function normalizeKey(v: string) {
