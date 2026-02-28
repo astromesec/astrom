@@ -9,12 +9,11 @@ interface Props {
 const AUDIO_BASE =
   "https://skenrw92ri82hzwy.public.blob.vercel-storage.com";
 
-const CTA_REVEAL_SECONDS = 13 * 60;
-const SEEK_BUFFER = 0.75;
+// ✅ LOCK posle 3 minuta
+const LOCK_SECONDS = 3 * 60;
 
-// ✅ Popust/urgency podešavanja
-const DISCOUNT_PERCENT = 75;
-const DISCOUNT_DURATION_SECONDS = 10 * 60; // 10 minuta
+// ✅ Anti-skip buffer (da ne mogu unapred)
+const SEEK_BUFFER = 0.75;
 
 function normalizeKey(v: string) {
   return (v || "").toLowerCase().trim();
@@ -40,12 +39,9 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
   const [duration, setDuration] = useState(0);
   const [currentTime, setCurrentTime] = useState(0);
 
-  const [showCTA, setShowCTA] = useState(false);
+  // ✅ lock state + CTA pulse
+  const [isLocked, setIsLocked] = useState(false);
   const [ctaPulse, setCtaPulse] = useState(false);
-
-  // ✅ Popust timer state
-  const [offerSecondsLeft, setOfferSecondsLeft] = useState<number>(0);
-  const [offerActive, setOfferActive] = useState<boolean>(false);
 
   const fileKey = useMemo(() => {
     const map: Record<string, string> = {
@@ -132,10 +128,32 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
     const onTimeUpdate = () => {
       const t = a.currentTime || 0;
       setCurrentTime(t);
-      if (t > maxListenedRef.current) maxListenedRef.current = t;
+
+      // ✅ ne dozvoli da maxListened ide preko LOCK_SECONDS
+      const capped = Math.min(t, LOCK_SECONDS);
+      if (capped > maxListenedRef.current) maxListenedRef.current = capped;
+
+      // ✅ LOCK kad dođe vreme
+      if (!isLocked && t >= LOCK_SECONDS) {
+        setIsLocked(true);
+
+        // zakoči na tačno 3:00, pauziraj, i upali pulse
+        isProgrammaticSeekRef.current = true;
+        a.currentTime = LOCK_SECONDS;
+        a.pause();
+        setTimeout(() => (isProgrammaticSeekRef.current = false), 0);
+
+        setTimeout(() => setCtaPulse(true), 120);
+        setTimeout(() => setCtaPulse(false), 2200);
+      }
     };
 
     const onPlay = () => {
+      // ✅ ako je zaključano, ne dozvoli play
+      if (isLocked) {
+        a.pause();
+        return;
+      }
       setIsPlaying(true);
       setHasStarted(true);
     };
@@ -145,10 +163,20 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
 
     const onSeeking = () => {
       if (isProgrammaticSeekRef.current) return;
-      const t = a.currentTime || 0;
-      const allowed = maxListenedRef.current + SEEK_BUFFER;
 
-      // zabranjen skip unapred
+      const t = a.currentTime || 0;
+
+      // ✅ nikad preko lock-a
+      if (t > LOCK_SECONDS) {
+        isProgrammaticSeekRef.current = true;
+        a.currentTime = LOCK_SECONDS;
+        a.pause();
+        setTimeout(() => (isProgrammaticSeekRef.current = false), 0);
+        return;
+      }
+
+      // ✅ zabrani skip unapred
+      const allowed = Math.min(maxListenedRef.current + SEEK_BUFFER, LOCK_SECONDS);
       if (t > allowed) {
         isProgrammaticSeekRef.current = true;
         a.currentTime = maxListenedRef.current;
@@ -171,47 +199,27 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
       a.removeEventListener("ended", onEnded);
       a.removeEventListener("seeking", onSeeking);
     };
-  }, []);
-
-  // ✅ Prikaži CTA posle 13 min
-  useEffect(() => {
-    if (showCTA) return;
-    if (currentTime >= CTA_REVEAL_SECONDS) {
-      setShowCTA(true);
-      setTimeout(() => setCtaPulse(true), 150);
-      setTimeout(() => setCtaPulse(false), 2200);
-    }
-  }, [currentTime, showCTA]);
-
-  // ✅ Startuj popust timer kad se CTA pojavi
-  useEffect(() => {
-    if (!showCTA) return;
-
-    setOfferActive(true);
-    setOfferSecondsLeft(DISCOUNT_DURATION_SECONDS);
-
-    const tick = () => {
-      setOfferSecondsLeft((prev) => {
-        const next = Math.max(0, prev - 1);
-        if (next === 0) setOfferActive(false);
-        return next;
-      });
-    };
-
-    const id = window.setInterval(tick, 1000);
-    return () => window.clearInterval(id);
-  }, [showCTA]);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isLocked]);
 
   const progress = useMemo(() => {
-    if (!duration || duration <= 0) return 0;
-    return Math.min(100, Math.max(0, (currentTime / duration) * 100));
+    const max = Math.min(duration || 0, LOCK_SECONDS);
+    if (!max || max <= 0) return 0;
+    return Math.min(100, Math.max(0, (Math.min(currentTime, LOCK_SECONDS) / max) * 100));
   }, [currentTime, duration]);
 
-  const remainingToCTA = Math.max(0, CTA_REVEAL_SECONDS - currentTime);
+  const remainingToLock = Math.max(0, LOCK_SECONDS - currentTime);
 
   const togglePlay = async () => {
     const a = audioRef.current;
     if (!a) return;
+
+    if (isLocked) {
+      // ako je zaključano, vodi ka checkout-u (ili samo pokaži CTA)
+      setTimeout(() => setCtaPulse(true), 50);
+      setTimeout(() => setCtaPulse(false), 1200);
+      return;
+    }
 
     try {
       if (a.paused) await a.play();
@@ -230,7 +238,9 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
     ? "Učitavanje audio..."
     : !hasStarted
       ? "Klikni ▶ da pokreneš audio."
-      : "Pojačaj ton. Slušaj pažljivo.";
+      : isLocked
+        ? "Preview je završen. Otključaj premium da nastaviš."
+        : "Pojačaj ton. Slušaj pažljivo.";
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-4">
@@ -306,20 +316,20 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
                 </div>
               </div>
 
-              {/* Countdown / unlocked */}
-              {!showCTA ? (
+              {/* Countdown / Locked */}
+              {!isLocked ? (
                 <div className="text-center px-4 py-3 rounded-xl bg-blue-500/10 border border-blue-400/20">
                   <p className="text-white/80 text-xs">
-                    Premium se otključava za{" "}
+                    Preview traje još{" "}
                     <span className="font-semibold text-white">
-                      {formatCountdown(remainingToCTA)}
+                      {formatCountdown(remainingToLock)}
                     </span>
                   </p>
                 </div>
               ) : (
-                <div className="text-center px-4 py-3 rounded-xl bg-emerald-500/10 border border-emerald-400/20">
-                  <p className="text-emerald-300 text-xs font-semibold">
-                    Premium otključan ✓
+                <div className="text-center px-4 py-3 rounded-xl bg-amber-500/10 border border-amber-400/20">
+                  <p className="text-amber-200 text-xs font-semibold">
+                    🔒 Preview završen — otključaj premium da nastaviš
                   </p>
                 </div>
               )}
@@ -327,65 +337,69 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
           </div>
         </div>
 
-        {/* ✅ CTA odmah ispod audija */}
-        {showCTA && (
-          <div className="mt-6 rounded-3xl border border-white/10 bg-gradient-to-br from-white/8 to-white/3 backdrop-blur-xl overflow-hidden shadow-2xl animate-in fade-in duration-700">
+        {/* ✅ CTA odmah ispod audija (posle LOCK-a) */}
+        {isLocked && (
+          <div className="mt-6 rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 to-white/3 backdrop-blur-xl overflow-hidden shadow-2xl animate-in fade-in duration-700">
             <div className="p-6 sm:p-8">
               <div className="text-center">
-                <h2 className="text-lg sm:text-xl font-bold text-white mb-3">
-                  Ne ostavljaj ovo nedovršeno.
+                <h2 className="text-xl sm:text-2xl font-extrabold text-white mb-3">
+                  Stao si tačno pre najbitnijeg dela.
                 </h2>
-                <p className="text-white/80 text-sm mb-5">
-                  Ovo je deo koji free čitanje ne otkriva: tvoje okidače, gde ti energija
-                  curi i tačan sledeći korak u ovom ciklusu.
+
+                <p className="text-white/85 text-sm sm:text-base leading-relaxed mb-6">
+                  Ovo nije „zabava“. Ako si se prepoznao u uvodu —{" "}
+                  <b>nastavak je ono zbog čega će ti kliknuti u glavi</b>.
+                  Tu dobijaš konkretno: zašto ti se ovo ponavlja i šta tačno radiš sledeće.
                 </p>
 
-                <div className="inline-flex items-center justify-center gap-2 px-3 py-1.5 rounded-full bg-white/10 border border-white/15 text-white/80 text-xs mb-5">
-                  <span className={ctaPulse ? "animate-pulse" : ""}>✨</span>
-                  <span>🌙 4.500+ otključanih premium čitanja</span>
+                <div className="rounded-2xl bg-white/5 border border-white/10 p-5 text-left mb-6">
+                  <div className="text-white font-semibold mb-3">
+                    Ako ne otključaš, propuštaš:
+                  </div>
+
+                  <ul className="space-y-3 text-white/85 text-sm">
+                    <li className="flex gap-3 items-start">
+                      <span className="text-cyan-300 mt-0.5">⚡</span>
+                      <span>
+                        <b>Glavni okidač</b> koji te vraća u isti obrazac (i kako da ga presečeš odmah).
+                      </span>
+                    </li>
+                    <li className="flex gap-3 items-start">
+                      <span className="text-cyan-300 mt-0.5">💔</span>
+                      <span>
+                        <b>Ljubav:</b> ko te „pali“ i zašto — da prestaneš da se vrtiš u krug.
+                      </span>
+                    </li>
+                    <li className="flex gap-3 items-start">
+                      <span className="text-cyan-300 mt-0.5">💸</span>
+                      <span>
+                        <b>Novac/energija:</b> gde ti curi fokus i šta menjaš da krene napred.
+                      </span>
+                    </li>
+                    <li className="flex gap-3 items-start">
+                      <span className="text-cyan-300 mt-0.5">🧭</span>
+                      <span>
+                        <b>Sledeći korak:</b> jedna jasna stvar koju radiš u narednih 24–48h.
+                      </span>
+                    </li>
+                  </ul>
                 </div>
 
-                <ul className="space-y-2 text-left mb-6 text-white/80 text-sm">
-                  <li className="flex gap-2 items-start">
-                    <span className="text-blue-400 flex-shrink-0">✓</span>
-                    <span>
-                      <b>Ljubav:</b> ko ti "pali okidače" i zašto
-                    </span>
-                  </li>
-                  <li className="flex gap-2 items-start">
-                    <span className="text-blue-400 flex-shrink-0">✓</span>
-                    <span>
-                      <b>Novac:</b> gde curi energija i kako da presečeš
-                    </span>
-                  </li>
-                  <li className="flex gap-2 items-start">
-                    <span className="text-blue-400 flex-shrink-0">✓</span>
-                    <span>
-                      <b>Sledeći koraci:</b> tačno šta da uradiš dalje
-                    </span>
-                  </li>
-                </ul>
+                <div className="mb-6 rounded-2xl bg-amber-500/10 border border-amber-400/20 px-4 py-3">
+                  <p className="text-amber-200 text-xs sm:text-sm font-semibold">
+                    Ako sada staneš, biraš da ostaneš u istom obrascu. Ako si stigao dovde, znači da te već boli.
+                    Otključaj sada i zatvori krug — dobićeš odgovor do kraja, ne još jedno „možda“.
+                  </p>
+                </div>
 
                 <button
                   onClick={goToCheckout}
-                  className={`w-full px-6 py-3 rounded-full font-extrabold text-white bg-gradient-to-r from-blue-500 to-cyan-500 hover:shadow-lg transition-all active:scale-95 ${
+                  className={`w-full px-6 py-3.5 rounded-full font-extrabold text-white bg-gradient-to-r from-blue-500 to-cyan-500 hover:shadow-[0_20px_60px_rgba(34,211,238,0.25)] transition-all active:scale-95 ${
                     ctaPulse ? "ring-2 ring-cyan-300/60" : ""
                   }`}
                 >
                   🔓 OTKLJUČAJ PREMIUM SADA
                 </button>
-
-                {/* ✅ Popust + countdown ispod dugmeta (bez “samo danas”) */}
-                {offerActive ? (
-                  <div className="mt-3 text-emerald-300 text-xs font-semibold">
-                    🔥 {DISCOUNT_PERCENT}% popusta aktivno još{" "}
-                    {formatCountdown(offerSecondsLeft)} (u ovoj sesiji)
-                  </div>
-                ) : (
-                  <div className="mt-3 text-white/60 text-xs">
-                    Ponuda je istekla. Premium je i dalje dostupan po regularnoj ceni.
-                  </div>
-                )}
 
                 <div className="mt-3 text-white/60 text-xs">
                   Jednokratna kupovina • Pristup odmah • Digitalni sadržaj
@@ -395,8 +409,8 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
           </div>
         )}
 
-        {/* ✅ Slika se prikazuje samo dok CTA NIJE aktivan (kad CTA izađe, slika nestaje) */}
-        {!showCTA && (
+        {/* ✅ Slika se prikazuje samo dok NIJE zaključano */}
+        {!isLocked && (
           <div className="mt-6 rounded-3xl border border-white/10 overflow-hidden shadow-2xl bg-gradient-to-br from-white/5 to-white/0 p-2">
             <img
               src="/img.png"
