@@ -6,8 +6,8 @@ interface Props {
   onContinue: () => void; // ostavljam u props, ali se ne koristi
 }
 
-const AUDIO_BASE =
-  "https://skenrw92ri82hzwy.public.blob.vercel-storage.com";
+// ✅ Cloudflare R2 public dev URL (tvoj)
+const AUDIO_BASE = "https://pub-7392e5eb1eb343e891a06e78c25e5db9.r2.dev";
 
 // ✅ LOCK posle 3 minuta
 const LOCK_SECONDS = 3 * 60;
@@ -94,7 +94,28 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
     return labels[fileKey] || zodiacSign || "Bik";
   }, [fileKey, zodiacSign]);
 
-  const audioSrc = useMemo(() => `${AUDIO_BASE}/${fileKey}.mp3.mp3`, [fileKey]);
+  // ✅ Tačni nazivi fajlova na R2 (space -> %20)
+  const audioFilename = useMemo(() => {
+    const files: Record<string, string> = {
+      ovan: "Ovan%20ceo.mp3",
+      bik: "Bik%20ceo.mp3",
+      blizanci: "Blizanci%20ceo.mp3",
+      rak: "Rak%20ceo.mp3",
+      lav: "Lav%20ceo.mp3",
+      devica: "Devica%20ceo.mp3",
+      vaga: "Vaga%20ceo.mp3",
+      skorpija: "Skorpija%20ceo.mp3",
+      strelac: "Strelac%20ceo.mp3",
+      jarac: "Jarac%20ceo.mp3",
+      vodolija: "Vodolija%20ceo.mp3",
+      ribe: "Ribe%20ceo.mp3",
+    };
+
+    return files[fileKey] || files.bik;
+  }, [fileKey]);
+
+  // ✅ Finalni URL ka audio fajlu
+  const audioSrc = useMemo(() => `${AUDIO_BASE}/${audioFilename}`, [audioFilename]);
 
   const buyLink = useMemo(() => {
     const base = "https://astromesecevocitanje.gumroad.com/l";
@@ -279,23 +300,11 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
                   {isPlaying ? (
                     <div className="flex gap-2">
                       <span className="block w-2 h-8 bg-white rounded-sm animate-pulse" />
-                      <span
-                        className="block w-2 h-8 bg-white rounded-sm animate-pulse"
-                        style={{ animationDelay: "0.2s" }}
-                      />
-                      <span
-                        className="block w-2 h-8 bg-white rounded-sm animate-pulse"
-                        style={{ animationDelay: "0.4s" }}
-                      />
+                      <span className="block w-2 h-8 bg-white rounded-sm animate-pulse" style={{ animationDelay: "0.2s" }} />
+                      <span className="block w-2 h-8 bg-white rounded-sm animate-pulse" style={{ animationDelay: "0.4s" }} />
                     </div>
                   ) : (
-                    <svg
-                      width="48"
-                      height="48"
-                      viewBox="0 0 24 24"
-                      fill="white"
-                      xmlns="http://www.w3.org/2000/svg"
-                    >
+                    <svg width="48" height="48" viewBox="0 0 24 24" fill="white" xmlns="http://www.w3.org/2000/svg">
                       <path d="M8 5v14l11-7z" />
                     </svg>
                   )}
@@ -311,9 +320,7 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
                   />
                 </div>
 
-                <div className="mt-3 text-white/60 text-xs text-center">
-                  {helperText}
-                </div>
+                <div className="mt-3 text-white/60 text-xs text-center">{helperText}</div>
               </div>
 
               {/* Countdown / Locked */}
@@ -321,9 +328,7 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
                 <div className="text-center px-4 py-3 rounded-xl bg-blue-500/10 border border-blue-400/20">
                   <p className="text-white/80 text-xs">
                     Preview traje još{" "}
-                    <span className="font-semibold text-white">
-                      {formatCountdown(remainingToLock)}
-                    </span>
+                    <span className="font-semibold text-white">{formatCountdown(remainingToLock)}</span>
                   </p>
                 </div>
               ) : (
@@ -348,14 +353,12 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
 
                 <p className="text-white/85 text-sm sm:text-base leading-relaxed mb-6">
                   Ovo nije „zabava“. Ako si se prepoznao u uvodu —{" "}
-                  <b>nastavak je ono zbog čega će ti kliknuti u glavi</b>.
-                  Tu dobijaš konkretno: zašto ti se ovo ponavlja i šta tačno radiš sledeće.
+                  <b>nastavak je ono zbog čega će ti kliknuti u glavi</b>. Tu dobijaš konkretno: zašto ti se ovo
+                  ponavlja i šta tačno radiš sledeće.
                 </p>
 
                 <div className="rounded-2xl bg-white/5 border border-white/10 p-5 text-left mb-6">
-                  <div className="text-white font-semibold mb-3">
-                    Ako ne otključaš, propuštaš:
-                  </div>
+                  <div className="text-white font-semibold mb-3">Ako ne otključaš, propuštaš:</div>
 
                   <ul className="space-y-3 text-white/85 text-sm">
                     <li className="flex gap-3 items-start">
@@ -412,12 +415,7 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
         {/* ✅ Slika se prikazuje samo dok NIJE zaključano */}
         {!isLocked && (
           <div className="mt-6 rounded-3xl border border-white/10 overflow-hidden shadow-2xl bg-gradient-to-br from-white/5 to-white/0 p-2">
-            <img
-              src="/img.png"
-              alt="Astrology Chart"
-              className="w-full h-auto rounded-2xl object-cover"
-              loading="lazy"
-            />
+            <img src="/img.png" alt="Astrology Chart" className="w-full h-auto rounded-2xl object-cover" loading="lazy" />
           </div>
         )}
 
