@@ -353,7 +353,8 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
 
         <p className="text-white/85 text-sm sm:text-base leading-relaxed mb-6">
           Ovo nije „zabava“. Ako si se prepoznao u uvodu —{" "}
-          <b>nastavak je ono zbog čega će ti kliknuti u glavi</b>.
+          <b>nastavak je ono zbog čega će ti kliknuti u glavi</b>. Tu dobijaš konkretno: zašto ti se ovo
+          ponavlja i šta tačno radiš sledeće.
         </p>
 
         {/* BENEFITI */}
@@ -361,8 +362,8 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
           <div className="text-white font-semibold mb-3">Ako ne otključaš, propuštaš:</div>
           <ul className="space-y-3 text-white/85 text-sm">
             <li>⚡ Glavni okidač koji te vraća u isti obrazac</li>
-            <li>💔 Ljubavni obrazac koji se ponavlja</li>
-            <li>💸 Gde gubiš energiju i fokus</li>
+            <li>💔 Ljubav: ko te „pali“ i zašto</li>
+            <li>💸 Gde ti curi energija i fokus</li>
             <li>🧭 Sledeći konkretan korak</li>
           </ul>
         </div>
@@ -397,7 +398,10 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
               "Nisam znao koliko držim stvari u sebi.",
               "Dalo mi je poverenje u sopstveni tempo."
             ].map((t, i) => (
-              <div key={i} className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white/80 text-xs">
+              <div
+                key={i}
+                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white/80 text-xs"
+              >
                 “{t}”
               </div>
             ))}
@@ -413,16 +417,18 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
         {/* CTA */}
         <button
           onClick={goToCheckout}
-          className="w-full px-6 py-3.5 rounded-full font-extrabold text-white bg-gradient-to-r from-blue-500 to-cyan-500"
+          className={`w-full px-6 py-3.5 rounded-full font-extrabold text-white bg-gradient-to-r from-blue-500 to-cyan-500 hover:shadow-[0_20px_60px_rgba(34,211,238,0.25)] transition-all active:scale-95 ${
+            ctaPulse ? "ring-2 ring-cyan-300/60" : ""
+          }`}
         >
           🔓 OTKLJUČAJ PREMIUM SADA
         </button>
 
         <div className="mt-3 text-white/60 text-xs">
-          Jednokratna kupovina • Pristup odmah
+          Jednokratna kupovina • Pristup odmah • Digitalni sadržaj
         </div>
       </div>
     </div>
   </div>
-  )
+);
 }
