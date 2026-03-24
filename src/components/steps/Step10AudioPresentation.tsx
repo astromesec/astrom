@@ -118,20 +118,21 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
   const audioSrc = useMemo(() => `${AUDIO_BASE}/${audioFilename}`, [audioFilename]);
 
   const buyLink = useMemo(() => {
-    const base = "https://astromesecevocitanje.gumroad.com/l";
-    const links: Record<string, string> = {
-      bik: `${base}/cxwwnf`,
-      blizanci: `${base}/jqgfb`,
-      devica: `${base}/xcrqpd`,
-      jarac: `${base}/uipbwd`,
-      lav: `${base}/psdngf`,
-      ovan: `${base}/oeksh`,
-      rak: `${base}/tqhez`,
-      ribe: `${base}/rmkoa`,
-      skorpija: `${base}/ldvgll`,
-      strelac: `${base}/qhouc`,
-      vaga: `${base}/pzklth`,
-      vodolija: `${base}/mvanxf`,
+    const base = "https://payhip.com/b";
+
+  const ids: Record<string, string> = {
+    vodolija: "ACNjr",
+    jarac: "34Ae9",
+    strelac: "ug3mn",
+    bik: "SyfsI",
+    blizanci: "L9RJT",
+    devica: "8LRwe",
+    lav: "c8yDV",
+    ovan: "fc4dL",
+    rak: "jZslA",
+    ribe: "vdIec",
+    skorpija: "k1Xz6",
+    vaga: "l0bYz",
     };
     return links[fileKey] || links.bik;
   }, [fileKey]);
