@@ -94,7 +94,6 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
     return labels[fileKey] || zodiacSign || "Bik";
   }, [fileKey, zodiacSign]);
 
-  // ✅ Tačni nazivi fajlova na R2 (space -> %20)
   const audioFilename = useMemo(() => {
     const files: Record<string, string> = {
       ovan: "Ovan%20ceo.mp3",
@@ -114,24 +113,23 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
     return files[fileKey] || files.bik;
   }, [fileKey]);
 
-  // ✅ Finalni URL ka audio fajlu
   const audioSrc = useMemo(() => `${AUDIO_BASE}/${audioFilename}`, [audioFilename]);
 
   const buyLink = useMemo(() => {
     const base = "https://payhip.com/b";
-  const links: Record<string, string> = {
-    vodolija: `${base}/ACNjr`,
-    jarac: `${base}/34Ae9`,
-    strelac: `${base}/ug3mn`,
-    bik: `${base}/SyfsI`,
-    blizanci: `${base}/L9RJT`,
-    devica: `${base}/8LRwe`,
-    lav: `${base}/c8yDV`,
-    ovan: `${base}/fc4dL`,
-    rak: `${base}/jZslA`,
-    ribe: `${base}/vdIec`,
-    skorpija: `${base}/k1Xz6`,
-    vaga: `${base}/l0bYz`,
+    const links: Record<string, string> = {
+      vodolija: `${base}/ACNjr`,
+      jarac: `${base}/34Ae9`,
+      strelac: `${base}/ug3mn`,
+      bik: `${base}/SyfsI`,
+      blizanci: `${base}/L9RJT`,
+      devica: `${base}/8LRwe`,
+      lav: `${base}/c8yDV`,
+      ovan: `${base}/fc4dL`,
+      rak: `${base}/jZslA`,
+      ribe: `${base}/vdIec`,
+      skorpija: `${base}/k1Xz6`,
+      vaga: `${base}/l0bYz`,
     };
     return links[fileKey] || links.bik;
   }, [fileKey]);
@@ -150,15 +148,12 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
       const t = a.currentTime || 0;
       setCurrentTime(t);
 
-      // ✅ ne dozvoli da maxListened ide preko LOCK_SECONDS
       const capped = Math.min(t, LOCK_SECONDS);
       if (capped > maxListenedRef.current) maxListenedRef.current = capped;
 
-      // ✅ LOCK kad dođe vreme
       if (!isLocked && t >= LOCK_SECONDS) {
         setIsLocked(true);
 
-        // zakoči na tačno 3:00, pauziraj, i upali pulse
         isProgrammaticSeekRef.current = true;
         a.currentTime = LOCK_SECONDS;
         a.pause();
@@ -170,7 +165,6 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
     };
 
     const onPlay = () => {
-      // ✅ ako je zaključano, ne dozvoli play
       if (isLocked) {
         a.pause();
         return;
@@ -187,7 +181,6 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
 
       const t = a.currentTime || 0;
 
-      // ✅ nikad preko lock-a
       if (t > LOCK_SECONDS) {
         isProgrammaticSeekRef.current = true;
         a.currentTime = LOCK_SECONDS;
@@ -196,7 +189,6 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
         return;
       }
 
-      // ✅ zabrani skip unapred
       const allowed = Math.min(maxListenedRef.current + SEEK_BUFFER, LOCK_SECONDS);
       if (t > allowed) {
         isProgrammaticSeekRef.current = true;
@@ -220,7 +212,6 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
       a.removeEventListener("ended", onEnded);
       a.removeEventListener("seeking", onSeeking);
     };
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [isLocked]);
 
   const progress = useMemo(() => {
@@ -236,7 +227,6 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
     if (!a) return;
 
     if (isLocked) {
-      // ako je zaključano, vodi ka checkout-u (ili samo pokaži CTA)
       setTimeout(() => setCtaPulse(true), 50);
       setTimeout(() => setCtaPulse(false), 1200);
       return;
@@ -266,7 +256,7 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-4">
       <div className="w-full max-w-xl">
-        {/* Header */}
+                {/* Header */}
         <div className="text-center mb-6">
           <div className="h-1 w-32 sm:w-40 bg-gradient-to-r from-blue-400 to-cyan-400 mx-auto mb-6 rounded-full" />
           <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
@@ -311,7 +301,7 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
                 </button>
               </div>
 
-              {/* Progress bar only */}
+              {/* Progress */}
               <div className="w-full max-w-xs sm:max-w-sm mb-5">
                 <div className="h-2 rounded-full bg-white/10 overflow-hidden">
                   <div
@@ -342,93 +332,113 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
           </div>
         </div>
 
-        {/* ✅ CTA odmah ispod audija (posle LOCK-a) */}
-{isLocked && (
-  <div className="mt-6 rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 to-white/3 backdrop-blur-xl overflow-hidden shadow-2xl animate-in fade-in duration-700">
-    <div className="p-6 sm:p-8">
-      <div className="text-center">
-        <h2 className="text-xl sm:text-2xl font-extrabold text-white mb-3">
-          Stao si tačno pre najbitnijeg dela.
-        </h2>
+        {/* ✅ Tvoj NOVI CTA (zamenjen) */}
+        {isLocked && (
+          <div className="mt-6 rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 to-white/3 backdrop-blur-xl overflow-hidden shadow-2xl animate-in fade-in duration-700">
+            <div className="p-6 sm:p-8">
+              <div className="text-center">
+                <h2 className="text-xl sm:text-2xl font-extrabold text-white mb-3">
+                  Stao si tačno pre najbitnijeg dela.
+                </h2>
 
-        <p className="text-white/85 text-sm sm:text-base leading-relaxed mb-6">
-          Ovo nije „zabava“. Ako si se prepoznao u uvodu —{" "}
-          <b>nastavak je ono zbog čega će ti kliknuti u glavi</b>. Tu dobijaš konkretno: zašto ti se ovo
-          ponavlja i šta tačno radiš sledeće.
-        </p>
+                <p className="text-white/85 text-sm sm:text-base leading-relaxed mb-6">
+                  Ovo nije „zabava“. Ako si se prepoznao u uvodu —{" "}
+                  <b>nastavak je ono zbog čega će ti kliknuti u glavi</b>. Tu dobijaš konkretno: zašto ti se ovo
+                  ponavlja i šta tačno radiš sledeće.
+                </p>
 
-        {/* BENEFITI */}
-        <div className="rounded-2xl bg-white/5 border border-white/10 p-5 text-left mb-6">
-          <div className="text-white font-semibold mb-3">Ako ne otključaš, propuštaš:</div>
-          <ul className="space-y-3 text-white/85 text-sm">
-            <li>⚡ Glavni okidač koji te vraća u isti obrazac</li>
-            <li>💔 Ljubav: ko te „pali“ i zašto</li>
-            <li>💸 Gde ti curi energija i fokus</li>
-            <li>🧭 Sledeći konkretan korak</li>
-          </ul>
-        </div>
+                {/* BENEFITI */}
+                <div className="rounded-2xl bg-white/5 border border-white/10 p-5 text-left mb-6">
+                  <div className="text-white font-semibold mb-3">Ako ne otključaš, propuštaš:</div>
+                  <ul className="space-y-3 text-white/85 text-sm">
+                    <li>⚡ Glavni okidač koji te vraća u isti obrazac</li>
+                    <li>💔 Ljubav: ko te „pali“ i zašto</li>
+                    <li>💸 Gde ti curi energija i fokus</li>
+                    <li>🧭 Sledeći konkretan korak</li>
+                  </ul>
+                </div>
 
-        {/* WARNING */}
-        <div className="mb-6 rounded-2xl bg-amber-500/10 border border-amber-400/20 px-4 py-3">
-          <p className="text-amber-200 text-xs sm:text-sm font-semibold">
-            Ako sada staneš, biraš da ostaneš u istom obrascu.
-          </p>
-        </div>
+                {/* WARNING */}
+                <div className="mb-6 rounded-2xl bg-amber-500/10 border border-amber-400/20 px-4 py-3">
+                  <p className="text-amber-200 text-xs sm:text-sm font-semibold">
+                    Ako sada staneš, biraš da ostaneš u istom obrascu.
+                  </p>
+                </div>
 
-        {/* ⭐ SOCIAL PROOF */}
-        <div className="mb-6">
-          <div className="text-center mb-4">
-            <div className="text-yellow-400 text-lg">⭐⭐⭐⭐⭐</div>
-            <div className="text-white font-semibold text-sm mt-1">
-              4.6 / 5 prosečna ocena
-            </div>
-            <div className="text-white/50 text-xs">
-              Na osnovu iskustava korisnika
-            </div>
-          </div>
+                {/* ⭐ SOCIAL PROOF */}
+                <div className="mb-6">
+                  <div className="text-center mb-4">
+                    <div className="text-yellow-400 text-lg">⭐⭐⭐⭐⭐</div>
+                    <div className="text-white font-semibold text-sm mt-1">
+                      4.6 / 5 prosečna ocena
+                    </div>
+                    <div className="text-white/50 text-xs">
+                      Na osnovu iskustava korisnika
+                    </div>
+                  </div>
 
-          <div className="space-y-3 max-h-64 overflow-y-auto pr-1 mb-4">
-            {[
-              "Iskreno, najviše mi je kliknuo deo za ljubav...",
-              "Deo o novcu i sigurnosti me je baš pogodio...",
-              "Najrealnije mi je bilo ono za odnose...",
-              "100% tačno, moj obrazac kroz ceo život.",
-              "Shvatio sam zašto me haotični ljudi izbace iz balansa.",
-              "Sad mi je jasnije zašto ne mogu da radim bez smisla.",
-              "Nisam znao koliko držim stvari u sebi.",
-              "Dalo mi je poverenje u sopstveni tempo."
-            ].map((t, i) => (
-              <div
-                key={i}
-                className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white/80 text-xs"
-              >
-                “{t}”
+                  <div className="space-y-3 max-h-64 overflow-y-auto pr-1 mb-4">
+                    {[
+                      "Iskreno, najviše mi je kliknuo deo za ljubav...",
+                      "Deo o novcu i sigurnosti me je baš pogodio...",
+                      "Najrealnije mi je bilo ono za odnose...",
+                      "100% tačno, moj obrazac kroz ceo život.",
+                      "Shvatio sam zašto me haotični ljudi izbace iz balansa.",
+                      "Sad mi je jasnije zašto ne mogu da radim bez smisla.",
+                      "Nisam znao koliko držim stvari u sebi.",
+                      "Dalo mi je poverenje u sopstveni tempo."
+                    ].map((t, i) => (
+                      <div
+                        key={i}
+                        className="bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-white/80 text-xs"
+                      >
+                        “{t}”
+                      </div>
+                    ))}
+                  </div>
+
+                  <div className="text-center">
+                    <div className="inline-block bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-cyan-400/30 px-4 py-2 rounded-full">
+                      🔓 Otključavanje: <b>7€ jednokratno</b>
+                    </div>
+                  </div>
+                </div>
+
+                {/* CTA dugme */}
+                <button
+                  onClick={goToCheckout}
+                  className={`w-full px-6 py-3.5 rounded-full font-extrabold text-white bg-gradient-to-r from-blue-500 to-cyan-500 hover:shadow-[0_20px_60px_rgba(34,211,238,0.25)] transition-all active:scale-95 ${
+                    ctaPulse ? "ring-2 ring-cyan-300/60" : ""
+                  }`}
+                >
+                  🔓 OTKLJUČAJ PREMIUM SADA
+                </button>
+
+                <div className="mt-3 text-white/60 text-xs">
+                  Jednokratna kupovina • Pristup odmah • Digitalni sadržaj
+                </div>
               </div>
-            ))}
-          </div>
-
-          <div className="text-center">
-            <div className="inline-block bg-gradient-to-r from-blue-500/20 to-cyan-500/20 border border-cyan-400/30 px-4 py-2 rounded-full">
-              🔓 Otključavanje: <b>7€ jednokratno</b>
             </div>
           </div>
-        </div>
+        )}
 
-        {/* CTA */}
-        <button
-          onClick={goToCheckout}
-          className={`w-full px-6 py-3.5 rounded-full font-extrabold text-white bg-gradient-to-r from-blue-500 to-cyan-500 hover:shadow-[0_20px_60px_rgba(34,211,238,0.25)] transition-all active:scale-95 ${
-            ctaPulse ? "ring-2 ring-cyan-300/60" : ""
-          }`}
-        >
-          🔓 OTKLJUČAJ PREMIUM SADA
-        </button>
+        {/* Slika */}
+        {!isLocked && (
+          <div className="mt-6 rounded-3xl border border-white/10 overflow-hidden shadow-2xl bg-gradient-to-br from-white/5 to-white/0 p-2">
+            <img src="/img.png" alt="Astrology Chart" className="w-full h-auto rounded-2xl object-cover" loading="lazy" />
+          </div>
+        )}
 
-        <div className="mt-3 text-white/60 text-xs">
-          Jednokratna kupovina • Pristup odmah • Digitalni sadržaj
-        </div>
+        <audio
+          ref={audioRef}
+          src={audioSrc}
+          preload="metadata"
+          onError={() => {
+            console.log("Audio failed to load:", audioSrc);
+            alert("Audio ne može da se učita. Proveri link: " + audioSrc);
+          }}
+        />
       </div>
     </div>
-  </div>
-);
+  );
 }
