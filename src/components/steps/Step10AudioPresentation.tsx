@@ -342,9 +342,7 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
           </div>
         </div>
 
-        // ... (skraćujem header jer je isti, fokus na deo koji smo menjali)
-
-{/* ✅ CTA odmah ispod audija (posle LOCK-a) */}
+        {/* ✅ CTA odmah ispod audija (posle LOCK-a) */}
 {isLocked && (
   <div className="mt-6 rounded-3xl border border-white/10 bg-gradient-to-br from-white/10 to-white/3 backdrop-blur-xl overflow-hidden shadow-2xl animate-in fade-in duration-700">
     <div className="p-6 sm:p-8">
@@ -426,4 +424,5 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
       </div>
     </div>
   </div>
-)
+  )
+}
