@@ -430,4 +430,5 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
       </div>
     </div>
   </div>
-)}
+);
+}
