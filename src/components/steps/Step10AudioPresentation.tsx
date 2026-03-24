@@ -119,20 +119,19 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
 
   const buyLink = useMemo(() => {
     const base = "https://payhip.com/b";
-
-  const ids: Record<string, string> = {
-    vodolija: "ACNjr",
-    jarac: "34Ae9",
-    strelac: "ug3mn",
-    bik: "SyfsI",
-    blizanci: "L9RJT",
-    devica: "8LRwe",
-    lav: "c8yDV",
-    ovan: "fc4dL",
-    rak: "jZslA",
-    ribe: "vdIec",
-    skorpija: "k1Xz6",
-    vaga: "l0bYz",
+  const links: Record<string, string> = {
+    vodolija: `${base}/ACNjr`,
+    jarac: `${base}/34Ae9`,
+    strelac: `${base}/ug3mn`,
+    bik: `${base}/SyfsI`,
+    blizanci: `${base}/L9RJT`,
+    devica: `${base}/8LRwe`,
+    lav: `${base}/c8yDV`,
+    ovan: `${base}/fc4dL`,
+    rak: `${base}/jZslA`,
+    ribe: `${base}/vdIec`,
+    skorpija: `${base}/k1Xz6`,
+    vaga: `${base}/l0bYz`,
     };
     return links[fileKey] || links.bik;
   }, [fileKey]);
