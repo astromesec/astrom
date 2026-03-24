@@ -1,135 +1,259 @@
-import { useState } from "react";
-import { Lock, Shield } from "lucide-react";
+import { useEffect, useMemo, useRef, useState } from "react";
 
 interface Props {
   firstName: string;
-  onComplete: (email: string) => void;
+  zodiacSign: string;
+  onContinue: () => void;
 }
 
-export default function Step11Checkout({ firstName, onComplete }: Props) {
-  const [email, setEmail] = useState("");
+const AUDIO_BASE = "https://pub-7392e5eb1eb343e891a06e78c25e5db9.r2.dev";
+const LOCK_SECONDS = 3 * 60;
+const SEEK_BUFFER = 0.75;
 
-  const handleSubmit = (e: React.FormEvent) => {
-    e.preventDefault();
-    if (email) onComplete(email);
+function normalizeKey(v: string) {
+  return (v || "").toLowerCase().trim();
+}
+
+function formatCountdown(seconds: number) {
+  const s = Math.max(0, Math.floor(seconds));
+  const m = Math.floor(s / 60);
+  const r = s % 60;
+  return `${m}:${r.toString().padStart(2, "0")}`;
+}
+
+export default function Step10AudioPresentation({ firstName, zodiacSign }: Props) {
+  const audioRef = useRef<HTMLAudioElement | null>(null);
+
+  const maxListenedRef = useRef<number>(0);
+  const isProgrammaticSeekRef = useRef<boolean>(false);
+
+  const [isReady, setIsReady] = useState(false);
+  const [isPlaying, setIsPlaying] = useState(false);
+  const [hasStarted, setHasStarted] = useState(false);
+
+  const [duration, setDuration] = useState(0);
+  const [currentTime, setCurrentTime] = useState(0);
+
+  const [isLocked, setIsLocked] = useState(false);
+  const [ctaPulse, setCtaPulse] = useState(false);
+
+  const fileKey = useMemo(() => {
+    const map: Record<string, string> = {
+      aries: "ovan",
+      taurus: "bik",
+      gemini: "blizanci",
+      cancer: "rak",
+      leo: "lav",
+      virgo: "devica",
+      libra: "vaga",
+      scorpio: "skorpija",
+      sagittarius: "strelac",
+      capricorn: "jarac",
+      aquarius: "vodolija",
+      pisces: "ribe",
+
+      ovan: "ovan",
+      bik: "bik",
+      blizanci: "blizanci",
+      rak: "rak",
+      lav: "lav",
+      devica: "devica",
+      vaga: "vaga",
+      skorpija: "skorpija",
+      strelac: "strelac",
+      jarac: "jarac",
+      vodolija: "vodolija",
+      ribe: "ribe",
+    };
+
+    const key = normalizeKey(zodiacSign);
+    return map[key] || key || "bik";
+  }, [zodiacSign]);
+
+  const zodiacLabel = useMemo(() => {
+    const labels: Record<string, string> = {
+      ovan: "Ovan",
+      bik: "Bik",
+      blizanci: "Blizanci",
+      rak: "Rak",
+      lav: "Lav",
+      devica: "Devica",
+      vaga: "Vaga",
+      skorpija: "Škorpija",
+      strelac: "Strelac",
+      jarac: "Jarac",
+      vodolija: "Vodolija",
+      ribe: "Ribe",
+    };
+    return labels[fileKey] || zodiacSign || "Bik";
+  }, [fileKey, zodiacSign]);
+
+  const audioFilename = useMemo(() => {
+    const files: Record<string, string> = {
+      ovan: "Ovan%20ceo.mp3",
+      bik: "Bik%20ceo.mp3",
+      blizanci: "Blizanci%20ceo.mp3",
+      rak: "Rak%20ceo.mp3",
+      lav: "Lav%20ceo.mp3",
+      devica: "Devica%20ceo.mp3",
+      vaga: "Vaga%20ceo.mp3",
+      skorpija: "Skorpija%20ceo.mp3",
+      strelac: "Strelac%20ceo.mp3",
+      jarac: "Jarac%20ceo.mp3",
+      vodolija: "Vodolija%20ceo.mp3",
+      ribe: "Ribe%20ceo.mp3",
+    };
+
+    return files[fileKey] || files.bik;
+  }, [fileKey]);
+
+  const audioSrc = useMemo(() => `${AUDIO_BASE}/${audioFilename}`, [audioFilename]);
+
+  // ✅ PAYHIP LINKOVI (ZAMENA ZA GUMROAD)
+  const buyLink = useMemo(() => {
+    const base = "https://payhip.com/b";
+
+    const links: Record<string, string> = {
+      strelac: `${base}/ug3mn`,
+      bik: `${base}/SyfsI`,
+      blizanci: `${base}/L9RJT`,
+      devica: `${base}/8LRwe`,
+      lav: `${base}/c8yDV`,
+      ovan: `${base}/fc4dL`,
+      rak: `${base}/jZslA`,
+      ribe: `${base}/vdIec`,
+      skorpija: `${base}/k1Xz6`,
+      vaga: `${base}/l0bYz`,
+      jarac: `${base}/34Ae9`,
+      vodolija: `${base}/ACNjr`,
+    };
+
+    return links[fileKey] || links.bik;
+  }, [fileKey]);
+
+  useEffect(() => {
+    const a = audioRef.current;
+    if (!a) return;
+
+    const onLoadedMetadata = () => {
+      setIsReady(true);
+      setDuration(Number.isFinite(a.duration) ? a.duration : 0);
+    };
+
+    const onTimeUpdate = () => {
+      const t = a.currentTime || 0;
+      setCurrentTime(t);
+
+      const capped = Math.min(t, LOCK_SECONDS);
+      if (capped > maxListenedRef.current) maxListenedRef.current = capped;
+
+      if (!isLocked && t >= LOCK_SECONDS) {
+        setIsLocked(true);
+
+        isProgrammaticSeekRef.current = true;
+        a.currentTime = LOCK_SECONDS;
+        a.pause();
+        setTimeout(() => (isProgrammaticSeekRef.current = false), 0);
+
+        setTimeout(() => setCtaPulse(true), 120);
+        setTimeout(() => setCtaPulse(false), 2200);
+      }
+    };
+
+    const onPlay = () => {
+      if (isLocked) {
+        a.pause();
+        return;
+      }
+      setIsPlaying(true);
+      setHasStarted(true);
+    };
+
+    const onPause = () => setIsPlaying(false);
+
+    const onSeeking = () => {
+      if (isProgrammaticSeekRef.current) return;
+
+      const t = a.currentTime || 0;
+
+      if (t > LOCK_SECONDS) {
+        isProgrammaticSeekRef.current = true;
+        a.currentTime = LOCK_SECONDS;
+        a.pause();
+        setTimeout(() => (isProgrammaticSeekRef.current = false), 0);
+        return;
+      }
+
+      const allowed = Math.min(maxListenedRef.current + SEEK_BUFFER, LOCK_SECONDS);
+      if (t > allowed) {
+        isProgrammaticSeekRef.current = true;
+        a.currentTime = maxListenedRef.current;
+        setTimeout(() => (isProgrammaticSeekRef.current = false), 0);
+      }
+    };
+
+    a.addEventListener("loadedmetadata", onLoadedMetadata);
+    a.addEventListener("timeupdate", onTimeUpdate);
+    a.addEventListener("play", onPlay);
+    a.addEventListener("pause", onPause);
+    a.addEventListener("seeking", onSeeking);
+
+    return () => {
+      a.removeEventListener("loadedmetadata", onLoadedMetadata);
+      a.removeEventListener("timeupdate", onTimeUpdate);
+      a.removeEventListener("play", onPlay);
+      a.removeEventListener("pause", onPause);
+      a.removeEventListener("seeking", onSeeking);
+    };
+  }, [isLocked]);
+
+  const progress = Math.min(100, (Math.min(currentTime, LOCK_SECONDS) / LOCK_SECONDS) * 100);
+
+  const togglePlay = async () => {
+    const a = audioRef.current;
+    if (!a) return;
+
+    if (isLocked) {
+      setTimeout(() => setCtaPulse(true), 50);
+      setTimeout(() => setCtaPulse(false), 1200);
+      return;
+    }
+
+    if (a.paused) await a.play();
+    else a.pause();
   };
 
-  const name = firstName?.trim() ? firstName.trim() : "Vaše";
+  const goToCheckout = () => {
+    window.open(buyLink, "_blank", "noopener,noreferrer");
+  };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 py-8 px-4">
-      <div className="w-full max-w-2xl mx-auto">
-        <div className="space-y-6">
-          <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/8 to-white/3 backdrop-blur-xl overflow-hidden shadow-2xl p-6 sm:p-8">
-            <div className="flex items-center gap-3 mb-8">
-              <div className="w-12 h-12 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-full flex items-center justify-center flex-shrink-0">
-                <span className="text-2xl">🌙</span>
-              </div>
-              <div>
-                <h1 className="text-lg sm:text-xl font-bold text-white">Mesečevo tumačenje</h1>
-                <div className="flex items-center gap-2 text-xs text-white/70">
-                  <Lock className="w-4 h-4" />
-                  <span>Siguran checkout</span>
-                </div>
-              </div>
-            </div>
+    <div className="min-h-screen flex items-center justify-center p-4">
+      <div className="w-full max-w-xl text-center">
 
-            <h2 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-              {name}, još samo malo
-            </h2>
-            <p className="text-white/70 mb-6 text-sm">
-              Email se koristi samo za pristup i isporuku.
-            </p>
+        <h1 className="text-2xl font-bold mb-4">
+          {firstName || "Vaše čitanje"} – {zodiacLabel}
+        </h1>
 
-            <form onSubmit={handleSubmit} className="space-y-5">
-              <div>
-                <label className="block text-sm font-medium text-white/90 mb-3">
-                  Email adresa
-                </label>
-                <input
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="vas@email.com"
-                  required
-                  className="w-full px-4 py-3 bg-white/10 border border-white/20 rounded-xl text-white placeholder-white/50 focus:outline-none focus:border-blue-400 transition-colors text-base"
-                />
-              </div>
+        <button onClick={togglePlay}>▶</button>
 
-              <button
-                type="submit"
-                disabled={!email}
-                className="w-full bg-gradient-to-r from-blue-500 to-cyan-500 hover:from-blue-600 hover:to-cyan-600 text-white font-bold py-3 sm:py-4 px-8 rounded-full transition-all duration-300 active:scale-95 shadow-lg hover:shadow-xl disabled:opacity-50 disabled:cursor-not-allowed disabled:active:scale-100 flex items-center justify-center gap-2 text-base sm:text-lg"
-              >
-                <Lock className="w-5 h-5" />
-                Nastavi na plaćanje
-              </button>
-
-              <div className="flex items-center justify-center gap-2 text-xs text-white/60 pt-2">
-                <Shield className="w-4 h-4" />
-                <span>Siguran proces — kartice se ne unose ovde</span>
-              </div>
-            </form>
-          </div>
-
-          <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/8 to-white/3 backdrop-blur-xl overflow-hidden shadow-2xl p-6 sm:p-8">
-            <h2 className="text-xl sm:text-2xl font-bold text-white mb-6">Šta dobijate</h2>
-
-            <div className="space-y-4 mb-6">
-              <div className="flex items-start gap-3">
-                <div className="w-10 h-10 bg-gradient-to-br from-blue-400 to-cyan-400 rounded-lg flex items-center justify-center flex-shrink-0 mt-1">
-                  <span className="text-lg">🌙</span>
-                </div>
-                <div>
-                  <h3 className="font-semibold text-white">Premium Moon Reading</h3>
-                  <p className="text-white/70 text-sm">Personalizovano čitanje sa dubljim uvidima</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="text-xl">✓</div>
-                <div>
-                  <p className="text-white/90 text-sm"><b>Ljubav:</b> ko ti pali okidače i kako prepoznaš pravu osobu</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="text-xl">✓</div>
-                <div>
-                  <p className="text-white/90 text-sm"><b>Novac:</b> gde curi energija i kako da presečeš</p>
-                </div>
-              </div>
-              <div className="flex items-start gap-3">
-                <div className="text-xl">✓</div>
-                <div>
-                  <p className="text-white/90 text-sm"><b>Praktični koraci:</b> šta da uradiš dalje</p>
-                </div>
-              </div>
-            </div>
-
-            <div className="border-t border-white/10 pt-6">
-              <div className="flex justify-between mb-3">
-                <span className="text-white/70">Cena</span>
-                <span className="text-white font-semibold">$11.00</span>
-              </div>
-              <div className="flex justify-between text-2xl font-bold text-white">
-                <span>UKUPNO</span>
-                <span>$11.00</span>
-              </div>
-            </div>
-
-            <div className="mt-6 p-4 bg-emerald-500/10 border border-emerald-400/30 rounded-xl">
-              <p className="text-emerald-300 text-sm font-medium">✓ Garancija od 30 dana - 100% vraćanja novca</p>
-            </div>
-          </div>
+        <div className="w-full h-2 bg-gray-200 my-4">
+          <div className="h-full bg-blue-500" style={{ width: `${progress}%` }} />
         </div>
 
-        <div className="mt-8 text-center text-xs text-white/50">
-          <p>
-            Pitanja? Piši nam na{" "}
-            <a href="mailto:support@moonreading.com" className="text-blue-400 hover:text-blue-300">
-              support@moonreading.com
-            </a>
-          </p>
-        </div>
+        {!isLocked ? (
+          <p>Preview traje...</p>
+        ) : (
+          <div>
+            <p>🔒 Preview završen</p>
+
+            <button onClick={goToCheckout}>
+              🔓 OTKLJUČAJ PREMIUM SADA
+            </button>
+          </div>
+        )}
+
+        <audio ref={audioRef} src={audioSrc} />
       </div>
     </div>
   );
