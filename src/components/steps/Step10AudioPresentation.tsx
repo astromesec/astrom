@@ -146,8 +146,7 @@ if (!a) return;
 ```
 const onLoadedMetadata = () => {
   setIsReady(true);
-  const d = Number.isFinite(a.duration) ? a.duration : 0;
-  setDuration(d);
+  setDuration(Number.isFinite(a.duration) ? a.duration : 0);
 };
 
 const onTimeUpdate = () => {
@@ -159,194 +158,89 @@ const onTimeUpdate = () => {
 
   if (!isLocked && t >= LOCK_SECONDS) {
     setIsLocked(true);
-
     isProgrammaticSeekRef.current = true;
     a.currentTime = LOCK_SECONDS;
     a.pause();
-    setTimeout(() => (isProgrammaticSeekRef.current = false), 0);
-
-    setTimeout(() => setCtaPulse(true), 120);
-    setTimeout(() => setCtaPulse(false), 2200);
-  }
-};
-
-const onPlay = () => {
-  if (isLocked) {
-    a.pause();
-    return;
-  }
-  setIsPlaying(true);
-  setHasStarted(true);
-};
-
-const onPause = () => setIsPlaying(false);
-const onEnded = () => setIsPlaying(false);
-
-const onSeeking = () => {
-  if (isProgrammaticSeekRef.current) return;
-
-  const t = a.currentTime || 0;
-
-  if (t > LOCK_SECONDS) {
-    isProgrammaticSeekRef.current = true;
-    a.currentTime = LOCK_SECONDS;
-    a.pause();
-    setTimeout(() => (isProgrammaticSeekRef.current = false), 0);
-    return;
-  }
-
-  const allowed = Math.min(maxListenedRef.current + SEEK_BUFFER, LOCK_SECONDS);
-  if (t > allowed) {
-    isProgrammaticSeekRef.current = true;
-    a.currentTime = maxListenedRef.current;
     setTimeout(() => (isProgrammaticSeekRef.current = false), 0);
   }
 };
 
 a.addEventListener("loadedmetadata", onLoadedMetadata);
 a.addEventListener("timeupdate", onTimeUpdate);
-a.addEventListener("play", onPlay);
-a.addEventListener("pause", onPause);
-a.addEventListener("ended", onEnded);
-a.addEventListener("seeking", onSeeking);
 
 return () => {
   a.removeEventListener("loadedmetadata", onLoadedMetadata);
   a.removeEventListener("timeupdate", onTimeUpdate);
-  a.removeEventListener("play", onPlay);
-  a.removeEventListener("pause", onPause);
-  a.removeEventListener("ended", onEnded);
-  a.removeEventListener("seeking", onSeeking);
 };
 ```
 
 }, [isLocked]);
 
-const progress = useMemo(() => {
-const max = Math.min(duration || 0, LOCK_SECONDS);
-if (!max || max <= 0) return 0;
-return Math.min(100, Math.max(0, (Math.min(currentTime, LOCK_SECONDS) / max) * 100));
-}, [currentTime, duration]);
-
-const remainingToLock = Math.max(0, LOCK_SECONDS - currentTime);
+const progress = Math.min(100, (Math.min(currentTime, LOCK_SECONDS) / LOCK_SECONDS) * 100);
 
 const togglePlay = async () => {
 const a = audioRef.current;
 if (!a) return;
-
-```
-if (isLocked) {
-  setTimeout(() => setCtaPulse(true), 50);
-  setTimeout(() => setCtaPulse(false), 1200);
-  return;
-}
-
-try {
-  if (a.paused) await a.play();
-  else a.pause();
-} catch (e) {
-  console.error("Audio play error:", e);
-  alert("Ne mogu da pokrenem audio. Proveri link.");
-}
-```
-
+if (a.paused) await a.play();
+else a.pause();
 };
 
 const goToCheckout = () => {
-window.open(buyLink, "_blank", "noopener,noreferrer");
+window.open(buyLink, "_blank");
 };
 
-const helperText = !isReady
-? "Učitavanje audio..."
-: !hasStarted
-? "Klikni ▶ da pokreneš audio."
-: isLocked
-? "Preview je završen. Otključaj premium da nastaviš."
-: "Pojačaj ton. Slušaj pažljivo.";
-
-return ( <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-4"> <div className="w-full max-w-xl"> <div className="text-center mb-6"> <div className="h-1 w-32 sm:w-40 bg-gradient-to-r from-blue-400 to-cyan-400 mx-auto mb-6 rounded-full" /> <h1 className="text-2xl sm:text-3xl font-bold text-white mb-2">
-{firstName || "Vaše čitanje"} </h1> <p className="text-white/60 text-sm">Vaše Mesečevo čitanje je spremno</p> </div>
+return ( <div className="min-h-screen flex items-center justify-center p-4"> <div className="w-full max-w-xl text-center">
 
 ```
-    <div className="rounded-3xl border border-white/10 bg-gradient-to-br from-white/8 to-white/3 backdrop-blur-xl overflow-hidden shadow-2xl">
-      <div className="p-6 sm:p-8">
-        <div className="flex items-center gap-3 mb-8 pb-6 border-b border-white/10">
-          <div className="w-12 h-12 rounded-2xl bg-gradient-to-br from-blue-400 to-cyan-400 flex items-center justify-center flex-shrink-0">
-            <span className="text-xl">🌙</span>
-          </div>
-          <div className="text-left">
-            <div className="text-white font-semibold">{zodiacLabel}</div>
-            <div className="text-white/50 text-xs">Mesečevo čitanje</div>
-          </div>
-        </div>
+    <h1 className="text-2xl font-bold mb-4">
+      {firstName || "Vaše čitanje"} – {zodiacLabel}
+    </h1>
 
-        <div className="flex flex-col items-center">
-          <div className="relative group mb-7">
-            <div className="absolute inset-0 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 blur-2xl opacity-50 group-hover:opacity-75 transition-opacity" />
-            <button
-              onClick={togglePlay}
-              className="relative w-28 h-28 sm:w-32 sm:h-32 rounded-full bg-gradient-to-r from-blue-500 to-cyan-500 shadow-2xl flex items-center justify-center"
-            >
-              {isPlaying ? "||" : "▶"}
-            </button>
-          </div>
+    <button onClick={togglePlay}>▶</button>
 
-          <div className="w-full max-w-xs sm:max-w-sm mb-5">
-            <div className="h-2 rounded-full bg-white/10 overflow-hidden">
-              <div className="h-full bg-gradient-to-r from-blue-400 to-cyan-400" style={{ width: `${progress}%` }} />
-            </div>
-            <div className="mt-3 text-white/60 text-xs text-center">{helperText}</div>
-          </div>
-
-          {!isLocked ? (
-            <div className="text-white/80 text-xs">
-              Preview traje još {formatCountdown(remainingToLock)}
-            </div>
-          ) : (
-            <div className="text-amber-200 text-xs font-semibold">
-              🔒 Preview završen
-            </div>
-          )}
-        </div>
-      </div>
+    <div className="w-full h-2 bg-gray-200 my-4">
+      <div className="h-full bg-blue-500" style={{ width: `${progress}%` }} />
     </div>
 
-    {isLocked && (
-      <div className="mt-6 text-left space-y-4">
+    {!isLocked ? (
+      <p>Preview traje...</p>
+    ) : (
+      <div className="mt-6 text-left">
 
-        <div className="font-bold text-center">
+        <div className="font-bold text-center mb-3">
           Šta kažu ljudi koji su kupili:
         </div>
 
         <div className="space-y-3 text-sm">
-          <div>“Stalno iste veze. Posle ovog sam skontao obrazac i prekinuo to.” — Nikola</div>
-          <div>“Overthinking nestao kad sam razumeo zašto ga imam.” — Stefan</div>
-          <div>“Dajem previše i sad znam gde grešim.” — Milica</div>
+          <div>“Shvatio sam zašto stalno biram iste veze i prekinuo to.” — Nikola</div>
+          <div>“Prestao sam da overthinkujem jer sam razumeo zašto.” — Stefan</div>
+          <div>“Tačno mi je objasnilo gde grešim u odnosima.” — Milica</div>
           <div>“Dobio sam konkretan smer u životu.” — Marko</div>
-          <div>“Objasnilo mi je kako razmišljam.” — Ana</div>
+          <div>“Objasnilo mi je moj način razmišljanja.” — Ana</div>
           <div>“Pogodilo me gde sabotiram sebe.” — Luka</div>
-          <div>“Nije horoskop nego analiza.” — Jelena</div>
+          <div>“Nije horoskop nego analiza ponašanja.” — Jelena</div>
           <div>“Doneo sam odluku posle 2 godine.” — Marija</div>
         </div>
 
-        <div className="text-center">
+        <div className="text-center mt-4 mb-4">
           <div>Jednokratno</div>
           <div className="text-2xl font-bold">7€</div>
         </div>
 
-        <button onClick={goToCheckout} className="w-full py-4 bg-blue-600 text-white rounded-full">
+        <button
+          onClick={goToCheckout}
+          className="w-full py-4 text-lg font-bold bg-blue-600 text-white rounded-full"
+        >
           🔓 OTKLJUČAJ CEO AUDIO
         </button>
 
       </div>
     )}
 
-    {!isLocked && (
-      <img src="/img.png" alt="Astrology Chart" className="mt-6 rounded-2xl" />
-    )}
-
-    <audio ref={audioRef} src={audioSrc} preload="metadata" />
+    <audio ref={audioRef} src={audioSrc} />
   </div>
 </div>
-  );
+```
+
+);
 }
