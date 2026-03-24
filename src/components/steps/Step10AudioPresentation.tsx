@@ -236,9 +236,8 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
     }
   };
 
-  // ✅ ISTI TAB REDIRECT
   const goToCheckout = () => {
-    window.location.href = buyLink;
+    window.open(buyLink, "_blank", "noopener,noreferrer");
   };
 
   const helperText = !isReady
@@ -251,8 +250,7 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
 
   return (
     <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-4">
-      {/* ostatak JSX-a ostaje identičan */}
-      {/* CTA dugme već koristi goToCheckout — sve radi */}
+      {/* ostatak UI ostaje isti */}
     </div>
   );
 }
