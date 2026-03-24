@@ -115,7 +115,6 @@ return files[fileKey] || files.bik;
 
 const audioSrc = useMemo(() => `${AUDIO_BASE}/${audioFilename}`, [audioFilename]);
 
-// ✅ PAYHIP LINKOVI
 const buyLink = useMemo(() => {
 const base = "https://payhip.com/b";
 
@@ -265,17 +264,15 @@ return ( <div className="min-h-screen flex items-center justify-center p-4"> <di
             Šta kažu ljudi koji su kupili:
           </div>
 
-          <div className="space-y-3 text-sm">
-
+          <div className="space-y-2 text-sm">
             <div>“Shvatio sam zašto stalno biram iste osobe.” — Nikola</div>
             <div>“Tačno mi je kliknulo gde grešim.” — Milica</div>
             <div>“Nije horoskop, ovo je analiza.” — Stefan</div>
-            <div>“Bukvalno mi je objasnilo obrazac.” — Ana</div>
-            <div>“Prvi put imam konkretan sledeći korak.” — Marko</div>
+            <div>“Objasnilo mi je obrazac.” — Ana</div>
+            <div>“Prvi put imam konkretan korak.” — Marko</div>
             <div>“Pogodilo me gde sabotiram sebe.” — Jelena</div>
             <div>“Prejako koliko je precizno.” — Luka</div>
             <div>“Presekao sam situaciju posle ovoga.” — Marija</div>
-
           </div>
         </div>
 
