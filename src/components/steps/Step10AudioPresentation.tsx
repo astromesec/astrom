@@ -348,3 +348,5 @@ return ( <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-
     <audio ref={audioRef} src={audioSrc} preload="metadata" />
   </div>
 </div>
+  );
+}
