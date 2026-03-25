@@ -242,7 +242,11 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
   };
 
   const goToCheckout = () => {
-    window.open(buyLink, "_blank", "noopener,noreferrer");
+  if (typeof window !== "undefined" && (window as any).fbq) {
+    (window as any).fbq("track", "InitiateCheckout");
+  }
+
+  window.open(buyLink, "_blank", "noopener,noreferrer");
   };
 
   const helperText = !isReady
