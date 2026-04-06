@@ -383,7 +383,7 @@ export default function Step10AudioPresentation({ firstName, zodiacSign }: Props
                     ctaPulse ? "ring-2 ring-cyan-300/60" : ""
                   }`}
                 >
-                  🔓 OTKLJUČAJ PREMIUM — 7€ JEDNOKRATNO
+                  🔓 OTKLJUČAJ PREMIUM — 22€ JEDNOKRATNO
                 </button>
 
                 <div className="mt-2 text-white/60 text-xs">
