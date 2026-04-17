@@ -6,7 +6,7 @@ interface Props {
 
 export default function Step5BirthtimeQuestion({ birthDay, birthYear, onAnswer }: Props) {
   return (
-    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-4">
+    <div className="min-h-screen bg-gradient-to-br from-slate-950 via-blue-950 to-slate-950 flex items-center justify-center p-4 pt-16">
       <div className="w-full max-w-md">
         <div className="text-center mb-10">
           <div className="h-1 w-32 sm:w-40 bg-gradient-to-r from-blue-400 to-cyan-400 mx-auto mb-6 rounded-full"></div>
