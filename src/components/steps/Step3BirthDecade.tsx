@@ -47,3 +47,4 @@ export default function Step3BirthDecade({ onSelect }: Props) {
     </div>
   );
 }
+
