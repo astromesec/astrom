@@ -1,10 +1,11 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import Starfield from './components/Starfield';
 import InputForm, { type PersonData } from './components/InputForm';
 import LoadingScreen from './components/LoadingScreen';
 import ResultsDisplay from './components/ResultsDisplay';
 import AstroProfileDisplay from './components/AstroProfileDisplay';
 import ToolResult from './components/ToolResult';
+import PrivacyPolicy from './components/PrivacyPolicy';
 import {
   getZodiacSign,
   calculateCompatibility,
@@ -13,15 +14,38 @@ import {
   type AstroProfile,
 } from './lib/zodiac';
 
-type Stage = 'input' | 'loading' | 'results' | 'profile' | 'tool';
+type Stage = 'input' | 'loading' | 'results' | 'profile' | 'tool' | 'privacy';
+
+const isPrivacyPath = () =>
+  window.location.pathname === '/privacy' || window.location.pathname === '/privacy/';
 
 export default function App() {
-  const [stage, setStage] = useState<Stage>('input');
+  const [stage, setStage] = useState<Stage>(isPrivacyPath() ? 'privacy' : 'input');
   const [person1, setPerson1] = useState<PersonData | null>(null);
   const [person2, setPerson2] = useState<PersonData | null>(null);
   const [results, setResults] = useState<CompatibilityResult[]>([]);
   const [profile, setProfile] = useState<AstroProfile | null>(null);
   const [activeTool, setActiveTool] = useState<string>('');
+
+  const goToPrivacy = () => {
+    window.history.pushState({}, '', '/privacy');
+    setStage('privacy');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  const goHome = () => {
+    window.history.pushState({}, '', '/');
+    setStage('input');
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
+  useEffect(() => {
+    const handlePopState = () => {
+      setStage(isPrivacyPath() ? 'privacy' : 'input');
+    };
+    window.addEventListener('popstate', handlePopState);
+    return () => window.removeEventListener('popstate', handlePopState);
+  }, []);
 
   const handleAnalyze = (p1: PersonData, p2: PersonData) => {
     setPerson1(p1);
@@ -99,6 +123,10 @@ export default function App() {
         />
       )}
 
+      {stage === 'privacy' && (
+        <PrivacyPolicy onBack={goHome} />
+      )}
+
       {/* Footer */}
       {stage !== 'loading' && (
         <footer className="relative z-10 py-8 px-4 text-center border-t border-gold-700/10 mt-12">
@@ -107,7 +135,17 @@ export default function App() {
             AI astrološka analiza za zabavu i refleksiju. Rezultati su zasnovani na astrološkim tradicijama
             i ne predstavljaju profesionalni savet.
           </p>
-          <p className="text-gray-700 text-xs mt-3">© 2026 AstroMesec.shop · Sva prava zadržana</p>
+          <div className="flex items-center justify-center gap-4 mt-3">
+            <p className="text-gray-700 text-xs">© 2026 AstroMesec.shop · Sva prava zadržana</p>
+            <span className="text-gray-700 text-xs">·</span>
+            <a
+              href="/privacy"
+              onClick={(e) => { e.preventDefault(); goToPrivacy(); }}
+              className="text-gray-500 hover:text-gold-300 text-xs transition-colors underline"
+            >
+              Politika Privatnosti
+            </a>
+          </div>
         </footer>
       )}
     </div>
